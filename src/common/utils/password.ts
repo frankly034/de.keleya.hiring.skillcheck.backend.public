@@ -1,5 +1,5 @@
 import { NotImplementedException } from '@nestjs/common';
-import * as bcrypt from 'bcryptjs';
+import * as bcrypt from 'bcrypt';
 
 const saltOrRounds = 10;
 export const hashPassword = async (password: string): Promise<string> => {
