@@ -12,6 +12,7 @@ import {
   HttpCode,
   UseGuards,
   NotImplementedException,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { AuthenticateUserDto } from './dto/authenticate-user.dto';
@@ -31,7 +32,7 @@ export class UserController {
   }
 
   @Get(':id')
-  async findUnique(@Param('id', ParseIntPipe) id, @Req() req: Request) {
+  async findUnique(@Param('id', ParseUUIDPipe) id, @Req() req: Request) {
     throw new NotImplementedException();
   }
 
