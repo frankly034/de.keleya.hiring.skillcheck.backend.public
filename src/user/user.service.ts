@@ -1,4 +1,5 @@
 import { Injectable, NotImplementedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Prisma, User } from '@prisma/client';
 import { PrismaService } from '../prisma.services';
@@ -10,7 +11,11 @@ import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UserService {
-  constructor(private readonly prisma: PrismaService, private readonly jwtService: JwtService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
+  ) {}
 
   /**
    * Finds users with matching fields
@@ -19,7 +24,8 @@ export class UserService {
    * @returns User[]
    */
   async find(findUserDto: FindUserDto): Promise<User[]> {
-    throw new NotImplementedException();
+    const { limit, offset, updatedSince, id: ids, name, credentials, email } = findUserDto;
+    return this.prisma.user.findMany();
   }
 
   /**
@@ -29,7 +35,7 @@ export class UserService {
    * @returns User
    */
   async findUnique(whereUnique: Prisma.UserWhereUniqueInput, includeCredentials = false) {
-    throw new NotImplementedException();
+    return this.prisma.user.findUnique({ where: { ...whereUnique } });
   }
 
   /**
@@ -39,7 +45,7 @@ export class UserService {
    * @returns result of create
    */
   async create(createUserDto: CreateUserDto) {
-    throw new NotImplementedException();
+    return this.prisma.user.create({ data: createUserDto });
   }
 
   /**
@@ -49,7 +55,7 @@ export class UserService {
    * @returns result of update
    */
   async update(updateUserDto: UpdateUserDto) {
-    throw new NotImplementedException();
+    return this.prisma.user.update({ where: { id: updateUserDto.id }, data: { ...updateUserDto } });
   }
 
   /**
@@ -63,7 +69,7 @@ export class UserService {
    * @returns results of users and credentials table modification
    */
   async delete(deleteUserDto: DeleteUserDto) {
-    throw new NotImplementedException();
+    return this.prisma.user.update({ where: { id: deleteUserDto.id }, data: { is_deleted: true }});
   }
 
   /**

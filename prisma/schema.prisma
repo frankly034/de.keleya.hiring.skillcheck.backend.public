@@ -14,10 +14,12 @@ model User {
   email                     String          @unique
   email_confirmed           Boolean         @default(false)
   is_admin                  Boolean         @default(false)
+  is_deleted                Boolean         @default(false)
+  password                  String
+  credentials               Credentials?    @relation(fields: [credentials_id], references: [id])
+  credentials_id            String?
   created_at                DateTime        @default(now())
   updated_at                DateTime        @updatedAt
-  credentials                Credentials?    @relation(fields: [credentials_id], references: [id])
-  credentials_id            String?
   @@map("users")
 }
 
