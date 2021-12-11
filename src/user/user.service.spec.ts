@@ -25,6 +25,7 @@ describe('UserService', () => {
     updated_at: getRandomString(),
     created_at: getRandomString(),
     credentials_id: null,
+    ...dto,
   }
 
   const defaultExpectValues = {
@@ -39,15 +40,11 @@ describe('UserService', () => {
 
   const mockPrismaService = {
     user: {
-      create: jest.fn(({ data: {credentials: { create: { hash }}, ...dto } }) => ({
-        ...dto,
-        ...defaultValues
-      })),
+      create: jest.fn(({ data: {credentials: { create: { hash }}, ...dto } }) => defaultValues),
 
-      findUnique: jest.fn(({id}) => ({
-        ...dto,
-        ...defaultValues
-      }))
+      findUnique: jest.fn(({id}) => defaultValues),
+
+      update: jest.fn(({}) => defaultValues)
     },
   };
 
@@ -83,9 +80,10 @@ describe('UserService', () => {
   });
 
   it('should fetch a user record and return it', async() => {
-    expect(await userService.findUnique({id})).toEqual({
-      ...defaultValues,
-      ...dto,
-    })
+    expect(await userService.findUnique({id})).toEqual(defaultValues)
+  });
+
+  it('should update a user record and return it', async() => {
+    expect(await userService.update({id})).toEqual(defaultValues)
   })
 });

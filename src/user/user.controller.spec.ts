@@ -21,6 +21,7 @@ describe('UserController', () => {
   };
 
   const defaultValues = {
+    id: getRandomString(),
     email_confirmed: false,
     is_admin: false,
     is_deleted: false,
@@ -42,10 +43,10 @@ describe('UserController', () => {
   const mockUserService = {
     create: jest.fn(({ hash, ...dto }) => ({
       ...dto,
-      id: getRandomString(),
       ...defaultValues,
     })),
-    findUnique: jest.fn((id) => ({ id: getRandomString(), ...defaultValues, ...dto})),
+    findUnique: jest.fn((id) => ({ ...defaultValues, ...dto})),
+    update: jest.fn((updateData) => ({ ...defaultValues, ...dto, ...updateData })),
   };
 
   beforeEach(async () => {
@@ -101,4 +102,14 @@ describe('UserController', () => {
     });
     expect(mockUserService.findUnique).toHaveBeenCalled();
   });
+
+  it('should update a user', async () => {
+    const updateData = { id: getRandomString(), name: "Franklyn Thomas"};
+    expect(await userController.update(updateData)).toEqual({
+      ...dto,
+      ...defaultExpectValues,
+      ...updateData,
+    });
+  });
+
 });
