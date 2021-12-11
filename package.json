@@ -18,7 +18,8 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "test:e2e:watch": "jest --config ./test/jest-e2e.json --watch"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
@@ -34,7 +35,7 @@
     "@prisma/client": "3.5.0",
     "bcryptjs": "^2.4.3",
     "class-transformer": "^0.4.0",
-    "class-validator": "^0.13.1",
+    "class-validator": "^0.13.2",
     "dayjs": "^1.10.7",
     "joi": "^17.4.2",
     "passport": "^0.5.0",

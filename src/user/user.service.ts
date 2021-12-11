@@ -35,7 +35,7 @@ export class UserService {
    * @returns User
    */
   async findUnique(whereUnique: Prisma.UserWhereUniqueInput, includeCredentials = false) {
-    return this.prisma.user.findUnique({ where: { ...whereUnique } });
+    return this.prisma.user.findUnique({ where: { ...whereUnique }, include: { credentials: true } });
   }
 
   /**
@@ -45,7 +45,10 @@ export class UserService {
    * @returns result of create
    */
   async create(createUserDto: CreateUserDto) {
-    return this.prisma.user.create({ data: createUserDto });
+    const { hash, ...rest } = createUserDto;
+    return hash
+      ? this.prisma.user.create({ data: { ...rest, credentials: { create: { hash } } } })
+      : this.prisma.user.create({ data: { ...rest } });
   }
 
   /**
@@ -69,7 +72,7 @@ export class UserService {
    * @returns results of users and credentials table modification
    */
   async delete(deleteUserDto: DeleteUserDto) {
-    return this.prisma.user.update({ where: { id: deleteUserDto.id }, data: { is_deleted: true }});
+    return this.prisma.user.update({ where: { id: deleteUserDto.id }, data: { is_deleted: true } });
   }
 
   /**
