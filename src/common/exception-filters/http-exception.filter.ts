@@ -34,7 +34,7 @@ export class CustomHttpExceptionFilter implements ExceptionFilter {
     };
 
     let errorObj = {};
-    if (Object.keys(message).every((key) => ['statusCode', 'message', 'error'])) {
+    if (Object.keys(message).every((key) => ['statusCode', 'message', 'error'].includes(key))) {
       const {statusCode, message: messageString, error} = message as IMessage;
       const formatedMsg = typeof messageString === 'string' ? [messageString] : [...messageString];
       msg = {...msg, message: formatedMsg, meta: error};

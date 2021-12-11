@@ -49,7 +49,7 @@ describe('AppController (e2e)', () => {
       }),
       findMany: jest.fn().mockResolvedValue([{ id: getRandomString(), ...data, ...defaultResponseData }]),
       findUnique: jest.fn().mockResolvedValue({ id: getRandomString(), ...data, ...defaultResponseData }),
-      update: jest.fn().mockResolvedValue({}),
+      update: jest.fn().mockResolvedValue({ id: getRandomString(), ...data, ...defaultResponseData }),
       delete: jest.fn().mockResolvedValue({}),
     },
   };
@@ -182,6 +182,35 @@ describe('AppController (e2e)', () => {
         expect(res.body).toEqual(
           expect.objectContaining({
             ...expectedValidationError,
+          }),
+        );
+      });
+  });
+
+  it('/user (PATCH) --> return 400 if id is not sent', async () => {
+    return request(app.getHttpServer())
+      .patch('/user')
+      .send(data)
+      .expect(400)
+      .then((res) => {
+        expect(res.body).toEqual(
+          expect.objectContaining({
+            ...expectedValidationError,
+          }),
+        );
+      });
+  });
+
+  it('/user (PATCH) --> return 200', async () => {
+    const updateData = { id: getRandomString(), name: 'Franklyn Thomas'};
+    return request(app.getHttpServer())
+      .patch('/user')
+      .send(updateData)
+      .expect(200)
+      .then((res) => {
+        expect(res.body).toEqual(
+          expect.objectContaining({
+            ...defaultUserExpectValues,
           }),
         );
       });

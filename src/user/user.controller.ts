@@ -41,7 +41,7 @@ export class UserController {
   }
 
   @Patch()
-  async update(@Body() updateUserDto: UpdateUserDto, @Req() req: Request) {
+  async update(@Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(updateUserDto);
   }
 
