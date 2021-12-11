@@ -31,7 +31,7 @@ export class UserController {
   }
 
   @Get(':id')
-  async findUnique(@Param('id', ParseUUIDPipe) id, @Req() req: Request) {
+  async findUnique(@Param('id', ParseUUIDPipe) id) {
     return this.usersService.findUnique({id});
   }
 

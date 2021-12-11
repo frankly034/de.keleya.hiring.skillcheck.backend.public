@@ -7,7 +7,7 @@ import { PrismaService } from '../src/prisma.services';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication;
-
+  const id = '15669f06-6e7a-40b7-ba10-7c7dc9c9780f';
   const data = { email: 'example@example.com', name: 'John Snnow', password: 'password' };
   const defaultResponseData = {
     email_confirmed: false,
@@ -20,6 +20,8 @@ describe('AppController (e2e)', () => {
 
   const defaultUserExpectValues = {
     id: expect.any(String),
+    name: expect.any(String),
+    email: expect.any(String),
     email_confirmed: expect.any(Boolean),
     is_admin: expect.any(Boolean),
     is_deleted: expect.any(Boolean),
@@ -27,6 +29,16 @@ describe('AppController (e2e)', () => {
     created_at: expect.any(String),
     updated_at: expect.any(String),
   };
+
+  const expectedValidationError = {
+    timestamp: expect.any(String),
+    path: expect.any(String),
+    method: expect.any(String),
+    message: expect.arrayContaining([expect.any(String)]),
+    errorCode: expect.any(Number),
+    name: expect.any(String),
+    meta: expect.any(String),
+  }
 
   const mockPrismaService = {
     user: {
@@ -36,7 +48,7 @@ describe('AppController (e2e)', () => {
         ...defaultResponseData
       }),
       findMany: jest.fn().mockResolvedValue([{ id: getRandomString(), ...data, ...defaultResponseData }]),
-      findUnique: jest.fn().mockResolvedValue({}),
+      findUnique: jest.fn().mockResolvedValue({ id: getRandomString(), ...data, ...defaultResponseData }),
       update: jest.fn().mockResolvedValue({}),
       delete: jest.fn().mockResolvedValue({}),
     },
@@ -86,10 +98,6 @@ describe('AppController (e2e)', () => {
       .then((res) => {
         expect(res.body).toEqual(
           expect.objectContaining({
-            id: expect.any(String),
-            name: expect.any(String),
-            email: expect.any(String),
-            is_deleted: expect.any(Boolean),
             ...defaultUserExpectValues,
           }),
         );
@@ -104,10 +112,6 @@ describe('AppController (e2e)', () => {
       .then((res) => {
         expect(res.body).toEqual(
           expect.objectContaining({
-            id: expect.any(String),
-            name: expect.any(String),
-            email: expect.any(String),
-            is_deleted: expect.any(Boolean),
             ...defaultUserExpectValues,
           }),
         );
@@ -123,9 +127,7 @@ describe('AppController (e2e)', () => {
       .then((res) => {
         expect(res.body).toEqual(
           expect.objectContaining({
-            statusCode: expect.any(Number),
-            error: expect.any(String),
-            message: expect.arrayContaining([expect.any(String)]),
+            ...expectedValidationError
           }),
         );
       });
@@ -139,9 +141,7 @@ describe('AppController (e2e)', () => {
       .then((res) => {
         expect(res.body).toEqual(
           expect.objectContaining({
-            statusCode: expect.any(Number),
-            error: expect.any(String),
-            message: expect.arrayContaining([expect.any(String)]),
+            ...expectedValidationError
           }),
         );
       });
@@ -155,13 +155,36 @@ describe('AppController (e2e)', () => {
       .then((res) => {
         expect(res.body).toEqual(
           expect.objectContaining({
-            statusCode: expect.any(Number),
-            error: expect.any(String),
-            message: expect.arrayContaining([expect.any(String)]),
+            ...expectedValidationError
           }),
         );
       });
   });
 
+  it('/user/:id (GET) --> return a single user data', async () => {
+    return request(app.getHttpServer())
+      .get(`/user/${id}`)
+      .expect(200)
+      .then((res) => {
+        expect(res.body).toEqual(
+          expect.objectContaining({
+            ...defaultUserExpectValues,
+          }),
+        );
+      });
+  });
+
+  it('/user/:id (GET)--> return 400 validation error - invalid uuid param ', async () => {
+    return request(app.getHttpServer())
+      .get(`/user/123`)
+      .expect(400)
+      .then((res) => {
+        expect(res.body).toEqual(
+          expect.objectContaining({
+            ...expectedValidationError,
+          }),
+        );
+      });
+  });
 
 });

@@ -26,7 +26,7 @@ export class QueryExceptionFilter {
       timestamp: new Date().toISOString(),
       path: request.url,
       method: request.method,
-      message,
+      message: [message],
       errorCode,
       meta,
       name,
