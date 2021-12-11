@@ -35,7 +35,7 @@ export class UserService {
    * @returns User
    */
   async findUnique(whereUnique: Prisma.UserWhereUniqueInput, includeCredentials = false) {
-    return this.prisma.user.findUnique({ where: { ...whereUnique }, include: { credentials: true } });
+    return this.prisma.user.findUnique({ where: { ...whereUnique }, include: { credentials: includeCredentials } });
   }
 
   /**

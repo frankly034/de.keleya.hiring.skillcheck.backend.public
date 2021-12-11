@@ -10,11 +10,22 @@ import { getRandomString } from '../common/utils/helpers';
 describe('UserService', () => {
   let userService: UserService;
 
+  const id = '15669f06-6e7a-40b7-ba10-7c7dc9c9780';
   const dto = {
     name: 'John Doe',
     email: 'john@example.com',
     password: 'password',
   };
+
+  const defaultValues = {
+    id: getRandomString(),
+    email_confirmed: false,
+    is_admin: false,
+    is_deleted: false,
+    updated_at: getRandomString(),
+    created_at: getRandomString(),
+    credentials_id: null,
+  }
 
   const defaultExpectValues = {
     id: expect.any(String),
@@ -29,15 +40,14 @@ describe('UserService', () => {
   const mockPrismaService = {
     user: {
       create: jest.fn(({ data: {credentials: { create: { hash }}, ...dto } }) => ({
-        id: getRandomString(),
         ...dto,
-        email_confirmed: false,
-        is_admin: false,
-        is_deleted: false,
-        updated_at: getRandomString(),
-        created_at: getRandomString(),
-        credentials_id: null,
+        ...defaultValues
       })),
+
+      findUnique: jest.fn(({id}) => ({
+        ...dto,
+        ...defaultValues
+      }))
     },
   };
 
@@ -71,4 +81,11 @@ describe('UserService', () => {
       ...dto,
     });
   });
+
+  it('should fetch a user record and return it', async() => {
+    expect(await userService.findUnique({id})).toEqual({
+      ...defaultValues,
+      ...dto,
+    })
+  })
 });

@@ -12,10 +12,21 @@ describe('UserController', () => {
   let userController: UserController;
   let userService: UserService;
 
+  const id = '15669f06-6e7a-40b7-ba10-7c7dc9c9780';
+
   const dto = {
     name: 'John Doe',
     email: 'john@example.com',
     password: 'password',
+  };
+
+  const defaultValues = {
+    email_confirmed: false,
+    is_admin: false,
+    is_deleted: false,
+    updated_at: getRandomString(),
+    created_at: getRandomString(),
+    credentials_id: null,
   };
 
   const defaultExpectValues = {
@@ -32,13 +43,9 @@ describe('UserController', () => {
     create: jest.fn(({ hash, ...dto }) => ({
       ...dto,
       id: getRandomString(),
-      email_confirmed: false,
-      is_admin: false,
-      is_deleted: false,
-      updated_at: getRandomString(),
-      created_at: getRandomString(),
-      credentials_id: null,
+      ...defaultValues,
     })),
+    findUnique: jest.fn((id) => ({ id: getRandomString(), ...defaultValues, ...dto})),
   };
 
   beforeEach(async () => {
@@ -76,7 +83,7 @@ describe('UserController', () => {
   });
 
   it('should create a user with credentials', async () => {
-    expect(await userController.create({...dto, hash: "xyz"})).toEqual({
+    expect(await userController.create({ ...dto, hash: 'xyz' })).toEqual({
       ...dto,
       ...defaultExpectValues,
     });
@@ -85,5 +92,13 @@ describe('UserController', () => {
   it('should call user service with appropriate dto data', async () => {
     expect(await userController.create(dto));
     expect(mockUserService.create).toHaveBeenCalledWith(dto);
+  });
+
+  it('should fetch a user with id param', async () => {
+    expect(await userController.findUnique(id)).toEqual({
+      ...dto,
+      ...defaultExpectValues,
+    });
+    expect(mockUserService.findUnique).toHaveBeenCalled();
   });
 });

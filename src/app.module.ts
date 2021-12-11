@@ -10,6 +10,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './common/strategies/jwt.strategy';
 import { PassportModule } from '@nestjs/passport';
 import { AppController } from './app.controller';
+import { CustomHttpExceptionFilter } from './common/exception-filters/http-exception.filter';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { AppController } from './app.controller';
     PrismaService,
     ConfigService,
     JwtStrategy,
+    { provide: APP_FILTER, useClass: CustomHttpExceptionFilter },
     { provide: APP_FILTER, useClass: QueryExceptionFilter },
   ],
 })
