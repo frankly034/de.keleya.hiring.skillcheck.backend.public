@@ -216,4 +216,18 @@ describe('AppController (e2e)', () => {
       });
   });
 
+  it('/user (DELETE) --> return 400 if id is not sent', async () => {
+    return request(app.getHttpServer())
+      .delete('/user')
+      .send(data)
+      .expect(400)
+      .then((res) => {
+        expect(res.body).toEqual(
+          expect.objectContaining({
+            ...expectedValidationError,
+          }),
+        );
+      });
+  });
+
 });

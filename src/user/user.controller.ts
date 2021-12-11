@@ -46,7 +46,7 @@ export class UserController {
   }
 
   @Delete()
-  async delete(@Body() deleteUserDto: DeleteUserDto, @Req() req: Request) {
+  async delete(@Body() deleteUserDto: DeleteUserDto) {
     return this.usersService.delete(deleteUserDto);
   }
 
