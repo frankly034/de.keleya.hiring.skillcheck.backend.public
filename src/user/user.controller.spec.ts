@@ -47,6 +47,7 @@ describe('UserController', () => {
     })),
     findUnique: jest.fn((id) => ({ ...defaultValues, ...dto})),
     update: jest.fn((updateData) => ({ ...defaultValues, ...dto, ...updateData })),
+    delete: jest.fn(({id}) => ({ ...defaultValues, ...dto, id, is_deleted: true })),
   };
 
   beforeEach(async () => {
@@ -109,6 +110,15 @@ describe('UserController', () => {
       ...dto,
       ...defaultExpectValues,
       ...updateData,
+    });
+  });
+
+  it('should update is_deleted to true and return user', async () => {
+    const updateData = { id: getRandomString(), name: "Franklyn Thomas"};
+    expect(await userController.delete({id})).toEqual({
+      ...dto,
+      ...defaultExpectValues,
+      id, is_deleted: true,
     });
   });
 

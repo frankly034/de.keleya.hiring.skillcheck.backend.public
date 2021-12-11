@@ -35,11 +35,14 @@ export class UserService {
    * @returns User
    */
   async findUnique(whereUnique: Prisma.UserWhereUniqueInput, includeCredentials = false) {
-    const foundUser = await this.prisma.user.findUnique({ where: { ...whereUnique }, include: { credentials: includeCredentials } });
-    if(foundUser) {
+    const foundUser = await this.prisma.user.findUnique({
+      where: { ...whereUnique },
+      include: { credentials: true },
+    });
+    if (foundUser) {
       return foundUser;
     }
-    throw new HttpException("User not found", HttpStatus.NOT_FOUND);
+    throw new HttpException('User not found', HttpStatus.NOT_FOUND);
   }
 
   /**
@@ -63,20 +66,21 @@ export class UserService {
    */
   async update(updateUserDto: UpdateUserDto) {
     const { hash, ...rest } = updateUserDto;
-    const foundUser = await this.findUnique({id: rest.id}, true);
-    if(!foundUser.is_deleted){
-      const data = hash && foundUser.credentials
-        ? { ...rest, credentials: { update: { hash } } } 
-        : hash
-          ?  { ...rest, credentials: { create: { hash } } } 
-          : { ...rest } 
+    const foundUser = await this.findUnique({ id: rest.id }, true);
+    if (!foundUser.is_deleted) {
+      const data =
+        hash && foundUser.credentials
+          ? { ...rest, credentials: { update: { hash } } }
+          : hash
+          ? { ...rest, credentials: { create: { hash } } }
+          : { ...rest };
       return this.prisma.user.update({
         where: { id: updateUserDto.id },
         data,
-        include: { credentials: true},
+        include: { credentials: true },
       });
     }
-    throw new HttpException("User has been deleted", HttpStatus.NOT_FOUND)
+    throw new HttpException('User has been deleted', HttpStatus.NOT_FOUND);
   }
 
   /**
@@ -90,7 +94,10 @@ export class UserService {
    * @returns results of users and credentials table modification
    */
   async delete(deleteUserDto: DeleteUserDto) {
-    return this.prisma.user.update({ where: { id: deleteUserDto.id }, data: { is_deleted: true } });
+    return this.prisma.user.update({
+      where: { id: deleteUserDto.id },
+      data: { is_deleted: true, credentials: { delete: true } },
+    });
   }
 
   /**

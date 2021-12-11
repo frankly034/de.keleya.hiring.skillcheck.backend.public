@@ -41,10 +41,12 @@ describe('UserService', () => {
   const mockPrismaService = {
     user: {
       create: jest.fn(({ data: {credentials: { create: { hash }}, ...dto } }) => defaultValues),
-
       findUnique: jest.fn(({id}) => defaultValues),
-
-      update: jest.fn(({}) => defaultValues)
+      update: jest.fn(({ data: {credentials, ...rest} }) => {
+        return credentials?.delete
+          ? {...defaultValues, ...rest, id}
+          : {...defaultValues, id, ...rest}
+      }),
     },
   };
 
@@ -84,6 +86,10 @@ describe('UserService', () => {
   });
 
   it('should update a user record and return it', async() => {
-    expect(await userService.update({id})).toEqual(defaultValues)
-  })
+    expect(await userService.update({id, name: 'Frank Tom'})).toEqual({...defaultValues, id, name: 'Frank Tom'})
+  });
+
+  it('should update a is_deleted to true and return user', async() => {
+    expect(await userService.delete({id})).toEqual({...defaultValues, id, is_deleted: true})
+  });
 });
