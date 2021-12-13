@@ -40,6 +40,16 @@ describe('UserController', () => {
     updated_at: expect.any(String),
   };
 
+  const findDto = {
+    limit: 20,
+    offset: 0,
+    email: '',
+    name: '',
+    id: [],
+    updatedSince: "",
+    credentials: true
+  }
+
   const mockUserService = {
     create: jest.fn(({ hash, ...dto }) => ({
       ...dto,
@@ -48,6 +58,7 @@ describe('UserController', () => {
     findUnique: jest.fn((id) => ({ ...defaultValues, ...dto})),
     update: jest.fn((updateData) => ({ ...defaultValues, ...dto, ...updateData })),
     delete: jest.fn(({id}) => ({ ...defaultValues, ...dto, id, is_deleted: true })),
+    find: jest.fn((findDto) => ([{...dto, ...defaultValues, credentials_id: "welcome"}]))
   };
 
   beforeEach(async () => {
@@ -120,6 +131,26 @@ describe('UserController', () => {
       ...defaultExpectValues,
       id, is_deleted: true,
     });
+  });
+
+  it('should fetch users', async () => {
+    expect(await userController.find(findDto)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: expect.any(String),
+          name: expect.any(String),
+          email: expect.any(String),
+          email_confirmed: expect.any(Boolean),
+          is_admin: expect.any(Boolean),
+          is_deleted: expect.any(Boolean),
+          password: expect.any(String),
+          credentials_id: expect.any(String),
+          created_at: expect.any(String),
+          updated_at: expect.any(String),
+        })
+      ])
+    );
+    expect(userService.find).toHaveBeenCalledWith(findDto);
   });
 
 });

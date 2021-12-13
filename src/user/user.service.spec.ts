@@ -9,6 +9,7 @@ import { getRandomString } from '../common/utils/helpers';
 
 describe('UserService', () => {
   let userService: UserService;
+  let prismaService: PrismaService;
 
   const id = '15669f06-6e7a-40b7-ba10-7c7dc9c9780';
   const dto = {
@@ -38,6 +39,16 @@ describe('UserService', () => {
     updated_at: expect.any(String),
   };
 
+  const findDto = {
+    limit: 20,
+    offset: 0,
+    email: '',
+    name: '',
+    id: [],
+    updatedSince: "",
+    credentials: true
+  };
+
   const mockPrismaService = {
     user: {
       create: jest.fn(({ data: {credentials: { create: { hash }}, ...dto } }) => defaultValues),
@@ -47,6 +58,7 @@ describe('UserService', () => {
           ? {...defaultValues, ...rest, id}
           : {...defaultValues, id, ...rest}
       }),
+      findMany: jest.fn((findDto) => [{...dto, ...defaultValues, credentials_id: getRandomString()}]),
     },
   };
 
@@ -68,6 +80,7 @@ describe('UserService', () => {
       .useValue(mockPrismaService)
       .compile();
     userService = module.get<UserService>(UserService);
+    prismaService = module.get<PrismaService>(PrismaService);
   });
 
   it('should be defined', () => {
@@ -91,5 +104,25 @@ describe('UserService', () => {
 
   it('should update a is_deleted to true and return user', async() => {
     expect(await userService.delete({id})).toEqual({...defaultValues, id, is_deleted: true})
+  });
+
+  it('should find all users with query params and return user', async() => {
+    expect(await userService.find(findDto)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: expect.any(String),
+          name: expect.any(String),
+          email: expect.any(String),
+          email_confirmed: expect.any(Boolean),
+          is_admin: expect.any(Boolean),
+          is_deleted: expect.any(Boolean),
+          password: expect.any(String),
+          credentials_id: expect.any(String),
+          created_at: expect.any(String),
+          updated_at: expect.any(String),
+        })
+      ])
+    );
+    expect(prismaService.user.findMany).toHaveBeenCalledTimes(1);
   });
 });
