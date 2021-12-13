@@ -25,7 +25,21 @@ export class UserService {
    */
   async find(findUserDto: FindUserDto): Promise<User[]> {
     const { limit, offset, updatedSince, id: ids, name, credentials, email } = findUserDto;
-    return this.prisma.user.findMany();
+    return this.prisma.user.findMany({
+      where: {
+        OR: {
+          email: { contains: email },
+          name: { contains: name },
+        },
+        AND: {
+          updated_at: { gte: updatedSince },
+          id: { in: ids },
+        },
+      },
+      take: Number(limit),
+      skip: Number(offset),
+      include: { credentials },
+    });
   }
 
   /**

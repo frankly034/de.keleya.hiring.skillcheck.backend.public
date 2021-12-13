@@ -10,6 +10,7 @@ describe('AppController (e2e)', () => {
   const id = '15669f06-6e7a-40b7-ba10-7c7dc9c9780f';
   const data = { email: 'example@example.com', name: 'John Snnow', password: 'password' };
   const defaultResponseData = {
+    id: getRandomString(),
     email_confirmed: false,
     is_admin: false,
     is_deleted: false,
@@ -38,18 +39,18 @@ describe('AppController (e2e)', () => {
     errorCode: expect.any(Number),
     name: expect.any(String),
     meta: expect.any(String),
-  }
+  };
 
   const mockPrismaService = {
     user: {
       create: jest.fn().mockResolvedValue({
         id: getRandomString(),
         ...data,
-        ...defaultResponseData
+        ...defaultResponseData,
       }),
-      findMany: jest.fn().mockResolvedValue([{ id: getRandomString(), ...data, ...defaultResponseData }]),
-      findUnique: jest.fn().mockResolvedValue({ id: getRandomString(), ...data, ...defaultResponseData }),
-      update: jest.fn().mockResolvedValue({ id: getRandomString(), ...data, ...defaultResponseData }),
+      findMany: jest.fn().mockResolvedValue([{ ...data, ...defaultResponseData }]),
+      findUnique: jest.fn().mockResolvedValue({ ...data, ...defaultResponseData }),
+      update: jest.fn().mockResolvedValue({ ...data, ...defaultResponseData }),
       delete: jest.fn().mockResolvedValue({}),
     },
   };
@@ -90,6 +91,34 @@ describe('AppController (e2e)', () => {
       });
   });
 
+  it('/user (GET) --> return 400 for invalid date string for updatedSince query param', async () => {
+    return request(app.getHttpServer())
+      .get('/user')
+      .query({ updatedSince: 'me' })
+      .expect(400)
+      .then((res) => {
+        expect(res.body).toEqual(
+          expect.objectContaining({
+            ...expectedValidationError,
+          }),
+        );
+      });
+  });
+
+  it('/user (GET) --> return 400 for invalid number string for limit and offset query param', async () => {
+    return request(app.getHttpServer())
+      .get('/user')
+      .query({ limit: 'me', offset: 'you' })
+      .expect(400)
+      .then((res) => {
+        expect(res.body).toEqual(
+          expect.objectContaining({
+            ...expectedValidationError,
+          }),
+        );
+      });
+  });
+
   it('/user (POST) --> create a new user - without hash', async () => {
     return request(app.getHttpServer())
       .post('/user')
@@ -107,7 +136,7 @@ describe('AppController (e2e)', () => {
   it('/user (POST) --> create a new user - with hash', async () => {
     return request(app.getHttpServer())
       .post('/user')
-      .send({...data, hash: 'xyz'})
+      .send({ ...data, hash: 'xyz' })
       .expect(201)
       .then((res) => {
         expect(res.body).toEqual(
@@ -119,7 +148,7 @@ describe('AppController (e2e)', () => {
   });
 
   it('/user (POST)--> return 400 validation error - incomplete dto ', async () => {
-    const {email, ...rest} = data;
+    const { email, ...rest } = data;
     return request(app.getHttpServer())
       .post('/user')
       .send(rest)
@@ -127,7 +156,7 @@ describe('AppController (e2e)', () => {
       .then((res) => {
         expect(res.body).toEqual(
           expect.objectContaining({
-            ...expectedValidationError
+            ...expectedValidationError,
           }),
         );
       });
@@ -136,12 +165,12 @@ describe('AppController (e2e)', () => {
   it('/user (POST)--> return 400 validation error - invalid email ', async () => {
     return request(app.getHttpServer())
       .post('/user')
-      .send({...data, email: "me"})
+      .send({ ...data, email: 'me' })
       .expect(400)
       .then((res) => {
         expect(res.body).toEqual(
           expect.objectContaining({
-            ...expectedValidationError
+            ...expectedValidationError,
           }),
         );
       });
@@ -155,7 +184,7 @@ describe('AppController (e2e)', () => {
       .then((res) => {
         expect(res.body).toEqual(
           expect.objectContaining({
-            ...expectedValidationError
+            ...expectedValidationError,
           }),
         );
       });
@@ -202,7 +231,7 @@ describe('AppController (e2e)', () => {
   });
 
   it('/user (PATCH) --> return 200', async () => {
-    const updateData = { id: getRandomString(), name: 'Franklyn Thomas'};
+    const updateData = { id: getRandomString(), name: 'Franklyn Thomas' };
     return request(app.getHttpServer())
       .patch('/user')
       .send(updateData)
@@ -229,5 +258,4 @@ describe('AppController (e2e)', () => {
         );
       });
   });
-
 });

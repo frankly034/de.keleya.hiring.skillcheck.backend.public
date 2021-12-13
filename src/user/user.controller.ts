@@ -12,8 +12,10 @@ import {
   UseGuards,
   NotImplementedException,
   ParseUUIDPipe,
+  UsePipes,
 } from '@nestjs/common';
 import { Request } from 'express';
+import { UserQueryStringPipe } from '../../src/common/pipes/user-query-string.pipe';
 import { AuthenticateUserDto } from './dto/authenticate-user.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { DeleteUserDto } from './dto/delete-user.dto';
@@ -26,7 +28,8 @@ export class UserController {
   constructor(private readonly usersService: UserService) {}
 
   @Get()
-  async find(@Query() findUserDto: FindUserDto, @Req() req: Request) {
+  @UsePipes(new UserQueryStringPipe())
+  async find(@Query() findUserDto: FindUserDto) {
     return this.usersService.find(findUserDto);
   }
 
