@@ -1,7 +1,9 @@
-import { HttpCode, HttpException, HttpStatus, Injectable, NotImplementedException } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Prisma, User } from '@prisma/client';
+import { JwtTokenUser } from 'src/common/types/jwtTokenUser';
+import { hashPassword, matchHashedPassword } from '../../src/common/utils/password';
 import { PrismaService } from '../prisma.services';
 import { AuthenticateUserDto } from './dto/authenticate-user.dto';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -17,13 +19,47 @@ export class UserService {
     private readonly configService: ConfigService,
   ) {}
 
+  private getToken(user: User) {
+    const { email: username, id } = user;
+    const payload: JwtTokenUser = { username, id };
+    return this.jwtService.sign(payload);
+  }
+
+  public async findOne(whereUnique: Prisma.UserWhereUniqueInput, includeCredentials = false) {
+    const foundUser = await this.prisma.user.findUnique({
+      where: { ...whereUnique },
+      include: { credentials: includeCredentials },
+    });
+    return foundUser;
+  }
+
+  private async getAuthenticatedUser(authenticateUserDto: AuthenticateUserDto) {
+    const { email, password } = authenticateUserDto;
+    const foundUser = await this.findOne({ email }, true);
+    if (foundUser) {
+      const isPasswordVerified = await matchHashedPassword(password, foundUser.password);
+      return isPasswordVerified ? foundUser : null;
+    }
+    return null;
+  }
+
+  private isVerifiedAccess(authUser: User, resourceId: number) {
+    if (!authUser?.isAdmin && authUser?.id !== resourceId) {
+      throw new UnauthorizedException();
+    }
+    return true;
+  }
+
   /**
    * Finds users with matching fields
    *
    * @param findUserDto
    * @returns User[]
    */
-  async find(findUserDto: FindUserDto): Promise<User[]> {
+  async find(findUserDto: FindUserDto, authUser?: User): Promise<User[]> {
+    if (!authUser?.isAdmin){
+      return [authUser];
+    }
     const { limit, offset, updatedSince, id: ids, name, credentials, email } = findUserDto;
     return this.prisma.user.findMany({
       where: {
@@ -32,7 +68,7 @@ export class UserService {
           name: { contains: name },
         },
         AND: {
-          updated_at: { gte: updatedSince },
+          updatedAt: { gte: updatedSince },
           id: { in: ids },
         },
       },
@@ -48,11 +84,12 @@ export class UserService {
    * @param whereUnique
    * @returns User
    */
-  async findUnique(whereUnique: Prisma.UserWhereUniqueInput, includeCredentials = false) {
-    const foundUser = await this.prisma.user.findUnique({
-      where: { ...whereUnique },
-      include: { credentials: true },
-    });
+  async findUnique(whereUnique: Prisma.UserWhereUniqueInput, includeCredentials = false, authUser?: User) {    
+    this.isVerifiedAccess(authUser, whereUnique.id);
+    if(authUser.id === whereUnique.id){
+      return authUser;
+    }
+    const foundUser = await this.findOne(whereUnique, includeCredentials);
     if (foundUser) {
       return foundUser;
     }
@@ -66,10 +103,11 @@ export class UserService {
    * @returns result of create
    */
   async create(createUserDto: CreateUserDto) {
-    const { hash, ...rest } = createUserDto;
+    const { hash, password: plainPassword, ...rest } = createUserDto;
+    const password = await hashPassword(plainPassword);
     return hash
-      ? this.prisma.user.create({ data: { ...rest, credentials: { create: { hash } } } })
-      : this.prisma.user.create({ data: { ...rest } });
+      ? this.prisma.user.create({ data: { ...rest, password, credentials: { create: { hash } } } })
+      : this.prisma.user.create({ data: { ...rest, password } });
   }
 
   /**
@@ -78,10 +116,11 @@ export class UserService {
    * @param updateUserDto
    * @returns result of update
    */
-  async update(updateUserDto: UpdateUserDto) {
-    const { hash, ...rest } = updateUserDto;
-    const foundUser = await this.findUnique({ id: rest.id }, true);
-    if (!foundUser.is_deleted) {
+  async update(updateUserDto: UpdateUserDto, authUser?: User) {
+    this.isVerifiedAccess(authUser, updateUserDto.id);
+    const { hash, id, ...rest } = updateUserDto;
+    const foundUser = await this.findOne({ id }, true);
+    if (!foundUser.isDeleted) {
       const data =
         hash && foundUser.credentials
           ? { ...rest, credentials: { update: { hash } } }
@@ -107,10 +146,11 @@ export class UserService {
    * @param deleteUserDto
    * @returns results of users and credentials table modification
    */
-  async delete(deleteUserDto: DeleteUserDto) {
+  async delete(deleteUserDto: DeleteUserDto, authUser?: User) {
+    this.isVerifiedAccess(authUser, deleteUserDto.id);
     return this.prisma.user.update({
       where: { id: deleteUserDto.id },
-      data: { is_deleted: true, credentials: { delete: true } },
+      data: { isDeleted: true, credentials: { delete: true } },
     });
   }
 
@@ -121,7 +161,13 @@ export class UserService {
    * @returns a JWT token
    */
   async authenticateAndGetJwtToken(authenticateUserDto: AuthenticateUserDto) {
-    throw new NotImplementedException();
+    const foundAuthenticatedUser = await this.getAuthenticatedUser(authenticateUserDto);
+    if (foundAuthenticatedUser && !foundAuthenticatedUser.isDeleted) {
+      return {
+        token: this.getToken(foundAuthenticatedUser),
+      };
+    }
+    throw new HttpException('Invalid user credentials', HttpStatus.BAD_REQUEST);
   }
 
   /**
@@ -131,7 +177,8 @@ export class UserService {
    * @returns true or false
    */
   async authenticate(authenticateUserDto: AuthenticateUserDto) {
-    throw new NotImplementedException();
+    const foundAuthenticatedUser = await this.getAuthenticatedUser(authenticateUserDto);
+    return foundAuthenticatedUser || false;
   }
 
   /**
@@ -141,6 +188,11 @@ export class UserService {
    * @returns the decoded token if valid
    */
   async validateToken(token: string) {
-    throw new NotImplementedException();
+    if (token && token.length > 7) {
+      const jwtToken = token.substring(7);
+      const decoded = await this.jwtService.decode(jwtToken);
+      return decoded || false;
+    }
+    return false;
   }
 }

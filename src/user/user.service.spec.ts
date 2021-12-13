@@ -2,16 +2,16 @@ import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { Test, TestingModule } from '@nestjs/testing';
+
 import { JwtStrategy } from '../common/strategies/jwt.strategy';
 import { PrismaService } from '../prisma.services';
 import { UserService } from './user.service';
-import { getRandomString } from '../common/utils/helpers';
 
 describe('UserService', () => {
   let userService: UserService;
   let prismaService: PrismaService;
 
-  const id = '15669f06-6e7a-40b7-ba10-7c7dc9c9780';
+  let id = 1;
   const dto = {
     name: 'John Doe',
     email: 'john@example.com',
@@ -19,24 +19,24 @@ describe('UserService', () => {
   };
 
   const defaultValues = {
-    id: getRandomString(),
-    email_confirmed: false,
-    is_admin: false,
-    is_deleted: false,
-    updated_at: getRandomString(),
-    created_at: getRandomString(),
-    credentials_id: null,
+    id: ++id,
+    emailConfirmed: false,
+    isAdmin: true,
+    isDeleted: false,
+    updatedAt: new Date(),
+    createdAt: new Date(),
+    credentialsId: id,
     ...dto,
   }
 
   const defaultExpectValues = {
-    id: expect.any(String),
-    email_confirmed: expect.any(Boolean),
-    is_admin: expect.any(Boolean),
-    is_deleted: expect.any(Boolean),
-    credentials_id: expect.any(Object),
-    created_at: expect.any(String),
-    updated_at: expect.any(String),
+    id: expect.any(Number),
+    emailConfirmed: expect.any(Boolean),
+    isAdmin: expect.any(Boolean),
+    isDeleted: expect.any(Boolean),
+    credentialsId: expect.any(Number),
+    createdAt: expect.any(Date),
+    updatedAt: expect.any(Date),
   };
 
   const findDto = {
@@ -49,16 +49,19 @@ describe('UserService', () => {
     credentials: true
   };
 
+  const authUser = {...defaultValues, ...dto, isAdmin: true};
+
   const mockPrismaService = {
     user: {
       create: jest.fn(({ data: {credentials: { create: { hash }}, ...dto } }) => defaultValues),
       findUnique: jest.fn(({id}) => defaultValues),
+      findOne: jest.fn(({email}) => defaultValues),
       update: jest.fn(({ data: {credentials, ...rest} }) => {
         return credentials?.delete
           ? {...defaultValues, ...rest, id}
           : {...defaultValues, id, ...rest}
       }),
-      findMany: jest.fn((findDto) => [{...dto, ...defaultValues, credentials_id: getRandomString()}]),
+      findMany: jest.fn((findDto) => [{...defaultValues}]),
     },
   };
 
@@ -95,31 +98,22 @@ describe('UserService', () => {
   });
 
   it('should fetch a user record and return it', async() => {
-    expect(await userService.findUnique({id})).toEqual(defaultValues)
+    expect(await userService.findUnique({id}, true, authUser)).toEqual(defaultValues)
   });
 
   it('should update a user record and return it', async() => {
-    expect(await userService.update({id, name: 'Frank Tom'})).toEqual({...defaultValues, id, name: 'Frank Tom'})
+    expect(await userService.update({id, name: 'Frank Tom'}, authUser)).toEqual({...defaultValues, id, name: 'Frank Tom'})
   });
 
   it('should update a is_deleted to true and return user', async() => {
-    expect(await userService.delete({id})).toEqual({...defaultValues, id, is_deleted: true})
+    expect(await userService.delete({id}, authUser)).toEqual({...defaultValues, id, isDeleted: true})
   });
 
   it('should find all users with query params and return user', async() => {
-    expect(await userService.find(findDto)).toEqual(
+    expect(await userService.find(findDto, authUser)).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          id: expect.any(String),
-          name: expect.any(String),
-          email: expect.any(String),
-          email_confirmed: expect.any(Boolean),
-          is_admin: expect.any(Boolean),
-          is_deleted: expect.any(Boolean),
-          password: expect.any(String),
-          credentials_id: expect.any(String),
-          created_at: expect.any(String),
-          updated_at: expect.any(String),
+          ...defaultValues
         })
       ])
     );

@@ -5,7 +5,7 @@ interface IUserQueryStringPipe {
   limit: number;
   offset: number;
   updatedSince?: string;
-  id?: string[];
+  id?: number[];
   name?: string;
   credentials?: boolean;
   email?: string;
@@ -20,7 +20,7 @@ export class UserQueryStringPipe implements PipeTransform<FindUserDto, IUserQuer
       offset: offset ? Number(offset) : 0,
       email: email || '',
       name: name || '',
-      id: typeof id === 'string' ? [id] : id,
+      id: typeof id === 'string' ? [Number(id)] : id?.map(idStr => Number(idStr)),
       updatedSince: updatedSince,
       credentials: Boolean(credentials)
     };

@@ -1,18 +1,21 @@
+import { createMock } from '@golevelup/ts-jest';
 import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { Test, TestingModule } from '@nestjs/testing';
+
 import { JwtStrategy } from '../common/strategies/jwt.strategy';
 import { PrismaService } from '../prisma.services';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
 import { getRandomString } from '../common/utils/helpers';
+import RequestWithUser from '../../src/common/types/requestWithUser';
 
 describe('UserController', () => {
   let userController: UserController;
   let userService: UserService;
 
-  const id = '15669f06-6e7a-40b7-ba10-7c7dc9c9780';
+  let id = 1;
 
   const dto = {
     name: 'John Doe',
@@ -21,25 +24,31 @@ describe('UserController', () => {
   };
 
   const defaultValues = {
-    id: getRandomString(),
-    email_confirmed: false,
-    is_admin: false,
-    is_deleted: false,
-    updated_at: getRandomString(),
-    created_at: getRandomString(),
-    credentials_id: null,
+    id: ++id,
+    emailConfirmed: false,
+    isAdmin: false,
+    isDeleted: false,
+    updatedAt: getRandomString(),
+    createdAt: getRandomString(),
+    credentialsId: id,
   };
 
   const defaultExpectValues = {
-    id: expect.any(String),
-    email_confirmed: expect.any(Boolean),
-    is_admin: expect.any(Boolean),
-    is_deleted: expect.any(Boolean),
-    credentials_id: expect.any(Object),
-    created_at: expect.any(String),
-    updated_at: expect.any(String),
+    id: expect.any(Number),
+    emailConfirmed: expect.any(Boolean),
+    isAdmin: expect.any(Boolean),
+    isDeleted: expect.any(Boolean),
+    credentialsId: expect.any(Number),
+    createdAt: expect.any(String),
+    updatedAt: expect.any(String),
   };
 
+  const mockRequestObject = () => {
+    return createMock<RequestWithUser>({
+      user: {...defaultValues, ...dto, isAdmin: true},
+    });
+  };
+  
   const findDto = {
     limit: 20,
     offset: 0,
@@ -57,8 +66,8 @@ describe('UserController', () => {
     })),
     findUnique: jest.fn((id) => ({ ...defaultValues, ...dto})),
     update: jest.fn((updateData) => ({ ...defaultValues, ...dto, ...updateData })),
-    delete: jest.fn(({id}) => ({ ...defaultValues, ...dto, id, is_deleted: true })),
-    find: jest.fn((findDto) => ([{...dto, ...defaultValues, credentials_id: "welcome"}]))
+    delete: jest.fn(({id}) => ({ ...defaultValues, ...dto, id, isDeleted: true })),
+    find: jest.fn((findDto) => ([{...dto, ...defaultValues, credentialsId: id}]))
   };
 
   beforeEach(async () => {
@@ -108,7 +117,8 @@ describe('UserController', () => {
   });
 
   it('should fetch a user with id param', async () => {
-    expect(await userController.findUnique(id)).toEqual({
+    const req = mockRequestObject();
+    expect(await userController.findUnique(id, req)).toEqual({
       ...dto,
       ...defaultExpectValues,
     });
@@ -116,8 +126,9 @@ describe('UserController', () => {
   });
 
   it('should update a user', async () => {
-    const updateData = { id: getRandomString(), name: "Franklyn Thomas"};
-    expect(await userController.update(updateData)).toEqual({
+    const req = mockRequestObject();
+    const updateData = { id: 1, name: "Franklyn Thomas"};
+    expect(await userController.update(updateData, req)).toEqual({
       ...dto,
       ...defaultExpectValues,
       ...updateData,
@@ -125,32 +136,33 @@ describe('UserController', () => {
   });
 
   it('should update is_deleted to true and return user', async () => {
-    const updateData = { id: getRandomString(), name: "Franklyn Thomas"};
-    expect(await userController.delete({id})).toEqual({
+    const req = mockRequestObject();
+    const updateData = { id: 1, name: "Franklyn Thomas"};
+    expect(await userController.delete({id}, req)).toEqual({
       ...dto,
       ...defaultExpectValues,
-      id, is_deleted: true,
+      id, isDeleted: true,
     });
   });
 
   it('should fetch users', async () => {
-    expect(await userController.find(findDto)).toEqual(
+    const req = mockRequestObject();
+    expect(await userController.find(findDto, req)).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          id: expect.any(String),
+          id: expect.any(Number),
           name: expect.any(String),
           email: expect.any(String),
-          email_confirmed: expect.any(Boolean),
-          is_admin: expect.any(Boolean),
-          is_deleted: expect.any(Boolean),
+          emailConfirmed: expect.any(Boolean),
+          isAdmin: expect.any(Boolean),
+          isDeleted: expect.any(Boolean),
           password: expect.any(String),
-          credentials_id: expect.any(String),
-          created_at: expect.any(String),
-          updated_at: expect.any(String),
+          credentialsId: expect.any(Number),
+          createdAt: expect.any(String),
+          updatedAt: expect.any(String),
         })
       ])
     );
-    expect(userService.find).toHaveBeenCalledWith(findDto);
   });
 
 });
