@@ -14,7 +14,7 @@ export class FindUserDto {
   updatedSince: string;
 
   @IsOptional()
-  id: string[];
+  id: number[];
 
   @IsOptional()
   name: string;

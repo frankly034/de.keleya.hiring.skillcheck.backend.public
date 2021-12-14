@@ -2,11 +2,11 @@ import { IsBoolean, IsNotEmpty, IsOptional } from "class-validator";
 
 export class UpdateUserDto {
   @IsNotEmpty()
-  id: string;
+  id: number ;
   
   @IsBoolean()
   @IsOptional()
-  email_confirmed?: boolean;
+  emailConfirmed?: boolean;
 
   name?: string;
 

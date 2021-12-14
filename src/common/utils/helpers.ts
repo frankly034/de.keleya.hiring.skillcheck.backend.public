@@ -1,1 +1,0 @@
-export const getRandomString = () => Date.now().toString(36);

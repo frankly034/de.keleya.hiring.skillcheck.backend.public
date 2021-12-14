@@ -1,8 +1,13 @@
 import { PrismaClient } from '@prisma/client';
+import { users } from './seed-data';
+
 const prisma = new PrismaClient();
 
 async function main() {
-  return;
+  for(let user of users){
+    const {hash, ...rest} = user;
+    await prisma.user.create({ data: {...rest, credentials: { create: { hash }}}})
+  }
 }
 
 main()
